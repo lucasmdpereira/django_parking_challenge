@@ -10,8 +10,13 @@ def post(request):
     address = company.pop("address", None)
     return HttpResponse(Companies.post_a_company(company, address))
 
-# def get(request):
-#     cnpj = request.headers['id']
-#     return HttpResponse('ok')
-#     # cnpj = json.loads(request.body)
-#     # return HttpResponse(Companies.get_a_company(cnpj))
+def put(request, cnpj):
+    company = json.loads(request.body)
+    address = company.pop("address", None)
+    return HttpResponse(Companies.put_a_company(company, address, cnpj))
+
+def get(request, cnpj):
+    return HttpResponse(Companies.get_a_company(cnpj))
+
+def delete(request, cnpj):
+    return HttpResponse(Companies.delete_a_company(cnpj))
