@@ -1,0 +1,11 @@
+{
+    "sqltools.useNodeRuntime": true,
+    "sqltools.connections": [
+        {
+            "previewLimit": 50,
+            "driver": "SQLite",
+            "name": "django_parking_challenge ",
+            "database": "\\\\wsl.localhost\\Arch\\home\\lucasmdpereira\\fcamara\\python\\django_parking_challenge\\db.sqlite3"
+        }
+    ]
+}
