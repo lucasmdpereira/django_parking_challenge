@@ -1,6 +1,6 @@
 from django.forms.models import model_to_dict
 from django.db import models
-from django.core.validators import MinValueValidator, MaxValueValidator, MinLengthValidator, MaxLengthValidator,ProhibitNullCharactersValidator
+from django.core.validators import MinValueValidator, MaxValueValidator, MinLengthValidator, MaxLengthValidator
 from django.core.exceptions import ValidationError
 
 import companies
@@ -17,10 +17,12 @@ class Addresses(models.Model):
     @staticmethod
     def find_a_address_in_db(query_id):
         return Addresses.objects.filter(id = query_id).get()
+    
+    #Criar método save_a_address_in_db, está estranho a classe Companies fazer isso
 
 class Companies(models.Model):
     name = models.CharField(max_length=50, unique=True, validators=[MaxLengthValidator(50)])
-    cnpj = models.PositiveIntegerField(max_length=14, unique=True, validators=[MaxValueValidator(99999999999999)])
+    cnpj = models.PositiveIntegerField(unique=True, validators=[MaxValueValidator(99999999999999)])
     phone = models.IntegerField(unique=True, validators=[MinValueValidator(5500900000000), MaxValueValidator(5599999999999)]) # Somente números do Brasil
     address = models.OneToOneField(Addresses, on_delete = models.CASCADE)
     bike_parking_spots = models.PositiveSmallIntegerField(default=0) # 0 a 32767
