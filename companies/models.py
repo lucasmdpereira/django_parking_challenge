@@ -1,14 +1,16 @@
 from django.forms.models import model_to_dict
 from django.db import models
+from django.core.validators import MinValueValidator, MaxValueValidator, MinLengthValidator, MaxLengthValidator,ProhibitNullCharactersValidator
+from django.core.exceptions import ValidationError
 
 import companies
 import json
 
 class Addresses(models.Model):
-    cep = models.CharField(max_length=8)
-    street = models.CharField(max_length=255)
-    number = models.PositiveSmallIntegerField()
-    others = models.CharField(max_length=255)
+    cep = models.PositiveIntegerField(validators=[MinValueValidator(1000000), MaxValueValidator(99999999)]) # https://suporte.boxloja.pro/article/90-faixa-de-ceps-do-brasil
+    street = models.CharField(max_length=255, validators=[MinLengthValidator(3), MaxLengthValidator(255)])
+    number = models.PositiveSmallIntegerField(validators=[MinValueValidator(1), MaxValueValidator(32767)])
+    others = models.CharField(max_length=255, blank=True, null=True, validators=[MaxLengthValidator(255)])
     class Meta:
         db_table = 'addresses';
         
@@ -17,9 +19,9 @@ class Addresses(models.Model):
         return Addresses.objects.filter(id = query_id).get()
 
 class Companies(models.Model):
-    name = models.CharField(max_length=50, unique=True)
-    cnpj = models.CharField(max_length=14, unique=True)
-    phone = models.CharField(max_length=11, unique=True)
+    name = models.CharField(max_length=50, unique=True, validators=[MaxLengthValidator(50)])
+    cnpj = models.PositiveIntegerField(max_length=14, unique=True, validators=[MaxValueValidator(99999999999999)])
+    phone = models.IntegerField(unique=True, validators=[MinValueValidator(5500900000000), MaxValueValidator(5599999999999)]) # Somente números do Brasil
     address = models.OneToOneField(Addresses, on_delete = models.CASCADE)
     bike_parking_spots = models.PositiveSmallIntegerField(default=0) # 0 a 32767
     car_parking_spots = models.PositiveSmallIntegerField(default=0)
@@ -27,13 +29,19 @@ class Companies(models.Model):
         db_table = 'companies';
     
     def post_a_company(company, address):
-        new_address = Addresses(id=None, **address)
-        new_address.save()
+        try:
+            new_address = Addresses(id=None, **address)
+            new_address.clean_fields()
+            new_address.save()
         
-        new_company = Companies(**company, address=new_address)
-        new_company.save()
+            new_company = Companies(**company, address=new_address)
+            new_company.clean_fields()
+            new_company.save()
         
-        return Companies.standardize_a_company(new_company)
+            return Companies.standardize_a_company(new_company)
+            
+        except ValidationError as e:
+            return json.dumps(e.message_dict)
     
     def put_a_company(edited_company, edited_address, query_cnpj):
         company = model_to_dict(Companies.find_a_company_in_db(query_cnpj))
