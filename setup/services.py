@@ -43,9 +43,30 @@ def post_object(object, object_model):
 @staticmethod
 def put_object(edited_object, object_query, object_key, object_model):
     try:
-        object = model_to_dict(object_model.objects.filter(type = object_query).get())
+        object = find_object_by_key(object_query, object_key, object_model)
         object = check_and_update_object(object, edited_object)
         object_model.objects.filter(pk = object['id']).update(**edited_object)
         return standardize_out(object)              
     except ValidationError as e:
         return standardize_out(e.message_dict)
+
+@staticmethod
+def get_object(object_query, object_key, object_model):
+    try:
+        object = find_object_by_key(object_query, object_key, object_model)
+        return standardize_out(object)
+    except:
+        return standardize_out({"error":[f'{object_query} not found']})
+    
+@staticmethod
+def delete_object(object_query, object_key, object_model):
+    object = find_object_by_key(object_query, object_key, object_model) 
+    object.delete()
+    return standardize_out({"msg":[f'{object_query} deleted successfully']})
+
+@staticmethod
+def find_object_by_key(object_query, object_key, object_model):
+    if (object_key == 'brand'): 
+        return object_model.objects.filter(brand = object_query).get()
+    if (object_key == 'type'):
+        return object_model.objects.filter(type = object_query).get()

@@ -26,8 +26,13 @@ def type_post(request):
     vehicle_type = json.loads(request.body)
     return HttpResponse(Vehicles_Types.post_a_vehicle_type(vehicle_type))
 
-def type_put(request, query_vehicle_type):
+def type_out(request, query_vehicle_type):
     vehicle_type= json.loads(request.body)
     return HttpResponse(Vehicles_Types.put_a_vehicle_type(vehicle_type, query_vehicle_type))
 
+def type_get(request, query_vehicle_type):
+    return HttpResponse(Vehicles_Types.get_a_vehicle_type(query_vehicle_type))
+
+def type_delete(request, query_vehicle_type):
+    return HttpResponse(Vehicles_Types.delete_a_type(query_vehicle_type))
 #-----------------------------------------------
