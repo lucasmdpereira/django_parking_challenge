@@ -5,7 +5,7 @@ import json
 @staticmethod
 def standardize_in(object):
     for key in object.keys():
-        object[key] = object[key].strip()
+        object[key] = str(object[key]).strip().lower()
     return object
 
 @staticmethod
@@ -36,7 +36,7 @@ def post_object(object, object_model):
             new_object.save()
             return standardize_out(new_object)
         except:
-            return standardize_out({"error": f'{object.values()} already exists'})
+            return standardize_out({"error": f'{list(object.values())[0]} already exists'})
     except ValidationError as e:
         return standardize_out(e.message_dict)
     
@@ -67,6 +67,6 @@ def delete_object(object_query, object_key, object_model):
 @staticmethod
 def find_object_by_key(object_query, object_key, object_model):
     if (object_key == 'brand'): 
-        return object_model.objects.filter(brand = object_query).get()
+        return object_model.objects.filter(brand__contains = object_query).get()
     if (object_key == 'type'):
-        return object_model.objects.filter(type = object_query).get()
+        return object_model.objects.filter(type__contains = object_query).get()

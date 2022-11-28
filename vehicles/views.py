@@ -1,5 +1,5 @@
 from django.http import HttpResponse
-from .models import Vehicles_Brands, Vehicles_Types
+from .models import Vehicles_Brands, Vehicles_Types, Vehicles_Models
 
 import json
 
@@ -26,7 +26,7 @@ def type_post(request):
     vehicle_type = json.loads(request.body)
     return HttpResponse(Vehicles_Types.post_a_vehicle_type(vehicle_type))
 
-def type_out(request, query_vehicle_type):
+def type_put(request, query_vehicle_type):
     vehicle_type= json.loads(request.body)
     return HttpResponse(Vehicles_Types.put_a_vehicle_type(vehicle_type, query_vehicle_type))
 
@@ -36,3 +36,17 @@ def type_get(request, query_vehicle_type):
 def type_delete(request, query_vehicle_type):
     return HttpResponse(Vehicles_Types.delete_a_type(query_vehicle_type))
 #-----------------------------------------------
+# Models----------------------------------------
+def model_post(request):
+    vehicle_model = json.loads(request.body)
+    return HttpResponse(Vehicles_Models.post_a_vehicle_model(vehicle_model))
+
+def model_put(request, query_vehicle_model):
+    vehicle_model = json.loads(request.body)
+    return HttpResponse(Vehicles_Models.put_a_vehicle_model(vehicle_model, query_vehicle_model))
+
+def model_get(request, query_vehicle_model):
+    return HttpResponse(Vehicles_Models.get_a_vehicle_model(query_vehicle_model))
+
+def model_delete(request, query_vehicle_model):
+    return HttpResponse(Vehicles_Models.delete_a_vehicle_model(query_vehicle_model))
