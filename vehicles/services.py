@@ -3,30 +3,6 @@ from django.forms.models import model_to_dict
 import json
 
 @staticmethod
-def standardize_in(object):
-    for key in object.keys():
-        object[key] = str(object[key]).strip().lower()
-    return object
-
-@staticmethod
-def standardize_out(object):
-    if (type(object) is dict):
-        standardized_object = object
-    else:
-        try:
-            standardized_object = model_to_dict(object) 
-        except:
-            return json.dumps({"Error": "Invalid object"})
-    return json.dumps(standardized_object)
-
-@staticmethod
-def check_and_update_object(object, edited_object ):
-    for key in object:
-        if (key in edited_object):
-            object[key] = edited_object[key]           
-    return object
-
-@staticmethod
 def post_object(object, object_model):
     object = standardize_in(object)
     new_object = object_model(**object)
@@ -63,6 +39,30 @@ def delete_object(object_query, object_key, object_model):
     object = find_object_by_key(object_query, object_key, object_model) 
     object.delete()
     return standardize_out({"msg":[f'{object_query} deleted successfully']})
+
+@staticmethod
+def standardize_in(object):
+    for key in object.keys():
+        object[key] = str(object[key]).strip().lower()
+    return object
+
+@staticmethod
+def standardize_out(object):
+    if (type(object) is dict):
+        standardized_object = object
+    else:
+        try:
+            standardized_object = model_to_dict(object) 
+        except:
+            return json.dumps({"Error": "Invalid object"})
+    return json.dumps(standardized_object)
+
+@staticmethod
+def check_and_update_object(object, edited_object ):
+    for key in object:
+        if (key in edited_object):
+            object[key] = edited_object[key]           
+    return object
 
 @staticmethod
 def find_object_by_key(object_query, object_key, object_model):

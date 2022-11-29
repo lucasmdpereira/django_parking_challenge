@@ -1,7 +1,7 @@
 from django.core.validators import MinLengthValidator, MaxLengthValidator
 from django.db import models
 
-from setup.services import post_object, put_object, get_object, delete_object
+from vehicles.services import post_object, put_object, get_object, delete_object
 
 class Vehicles_Types(models.Model):
     type = models.CharField(max_length=20, unique=True, validators=[MinLengthValidator(3), MaxLengthValidator(20)])
