@@ -3,10 +3,7 @@ from django.db import models
 from . import Vehicles_Brands, Vehicles_Types
 
 from django.forms.models import model_to_dict
-from django.core.exceptions import ValidationError
-import json
-
-from setup.services import post_object, put_object, get_object, delete_object, find_object_by_key, standardize_out, check_and_update_object
+from vehicles.services import standardize_out, check_and_update_object
 
 class Vehicles_Models(models.Model):
     model = models.CharField(max_length=20, unique=True, validators=[MinLengthValidator(3), MaxLengthValidator(20)])
@@ -22,6 +19,7 @@ class Vehicles_Models(models.Model):
             
             new_vehicle_model = Vehicles_Models(**vehicle_model)
             new_vehicle_model.save()
+            
             return standardize_out(new_vehicle_model)
         except:
             return standardize_out({"error": ["Check model, brand and type names"]})
@@ -57,3 +55,4 @@ class Vehicles_Models(models.Model):
             return standardize_out({"msg":[f'{query_vehicle_model} deleted successfully']})
         except:
             return standardize_out({"error": ["Check model, brand and type names"]})
+        
