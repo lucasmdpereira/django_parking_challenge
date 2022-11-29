@@ -1,5 +1,5 @@
 from django.http import HttpResponse
-from .models import Vehicles_Brands, Vehicles_Types, Vehicles_Models
+from vehicles.models import Vehicles_Brands, Vehicles_Types, Vehicles_Models, Vehicles
 
 import json
 
@@ -50,3 +50,21 @@ def model_get(request, query_vehicle_model):
 
 def model_delete(request, query_vehicle_model):
     return HttpResponse(Vehicles_Models.delete_a_vehicle_model(query_vehicle_model))
+#------------------------------------------------
+# Vehicles---------------------------------------
+def vehicle_post(request):
+    vehicle = json.loads(request.body)
+    return HttpResponse(Vehicles.post_a_vehicle(vehicle))
+
+def vehicle_put(request, query_vehicle):
+    vehicle = json.loads(request.body)
+    return HttpResponse(Vehicles.put_a_vehicle(vehicle, query_vehicle))
+
+def vehicle_get(request, query_vehicle):
+    return HttpResponse(Vehicles.get_a_vehicle(query_vehicle))
+
+def vehicle_delete(request, query_vehicle):
+    return HttpResponse(Vehicles.delete_a_vehicle(query_vehicle))
+#-------------------------------------------------
+    
+                        

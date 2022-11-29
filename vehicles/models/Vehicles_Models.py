@@ -46,7 +46,7 @@ class Vehicles_Models(models.Model):
 
             return standardize_out(vehicle_model)
         except:
-            return standardize_out({"error": ["Check model, brand and type names"]})
+            return standardize_out({"error": ["Check the model query"]})
         
     def delete_a_vehicle_model(query_vehicle_model):
         try:
