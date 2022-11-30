@@ -1,4 +1,4 @@
-from django.core.validators import validate_slug
+from django.core.validators import validate_slug, MinLengthValidator, MaxLengthValidator
 from django.db import models
 from django.forms.models import model_to_dict
 
@@ -9,6 +9,7 @@ from . import Vehicles_Models
 class Vehicles(models.Model):
     license_plate = models.CharField(max_length=7, unique=True, validators=[validate_slug])
     model = models.ForeignKey(Vehicles_Models, on_delete = models.CASCADE)
+    type = models.CharField(max_length=20, unique=True, validators=[MinLengthValidator(3), MaxLengthValidator(20)])
     class Meta:
         db_table = 'vehicles';
     
