@@ -16,7 +16,7 @@ def put(request, cnpj):
     return Companies.put_a_company(company, address, cnpj)
 
 def get(request, cnpj):
-    return HttpResponse(Companies.get_a_company(cnpj))
+    return Companies.get_a_company(cnpj)
 
 def delete(request, cnpj):
-    return HttpResponse(Companies.delete_a_company(cnpj))
+    return Companies.delete_a_company(cnpj)

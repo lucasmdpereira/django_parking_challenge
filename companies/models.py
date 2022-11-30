@@ -121,16 +121,19 @@ class Companies(models.Model):
         
         return standardize_a_company(Companies.objects.get(pk = company['id']), Companies, Addresses)
         
-    # TODO :sparkles: criar retorno caso não encontre nenhuma empresa
     def get_a_company(query_cnpj):       
         company = Companies.find_a_company_in_db(query_cnpj)
+        if (company == []):
+            return HttpResponse(json.dumps([]), status=200)
         return standardize_a_company(company, Companies, Addresses)
         
     def delete_a_company(query_cnpj):
         company = Companies.find_a_company_in_db(query_cnpj)
-        company.delete()
-        
-        return json.dumps('Company deleted successfully')
+        if (company == []):
+            return HttpResponse(json.dumps({'company': ['Company not found to delete, please check the cnpj']}), status=200)        
+        else:
+            company.delete()
+            return HttpResponse(json.dumps({'company': [f'CNPJ {query_cnpj} deleted successfully']}), status=200)
     
     @staticmethod
     def find_a_company_in_db(query_cnpj):

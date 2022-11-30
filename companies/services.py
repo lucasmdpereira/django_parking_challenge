@@ -9,7 +9,7 @@ def standardize_a_company(company, Companies, Addresses):
         standardized_company = model_to_dict(company)
     else:
         return {}           
-    
+
     address = Addresses.find_a_address_in_db(standardized_company['address']) 
     standardized_company['address'] = model_to_dict(address)  
     
