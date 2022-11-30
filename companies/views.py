@@ -8,7 +8,7 @@ def index(request):
 def post(request):
     company = json.loads(request.body)
     address = company.pop("address", None)
-    return HttpResponse(Companies.post_a_company(company, address))
+    return Companies.post_a_company(company, address)
 
 def put(request, cnpj):
     company = json.loads(request.body)

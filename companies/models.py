@@ -1,11 +1,13 @@
-from django.forms.models import model_to_dict
 from django.db import models
+from django.forms.models import model_to_dict
+from django.http import HttpResponse
+
 from django.core.validators import MinValueValidator, MaxValueValidator, MinLengthValidator, MaxLengthValidator
 from django.core.exceptions import ValidationError
+
 from companies.services import standardize_a_company
+from setup.services import check_and_update_object
 
-
-import companies # TODO :recycle: Verificar necessidade em "standardize_a_company"
 import json
 
 class Addresses(models.Model):
@@ -25,7 +27,7 @@ class Addresses(models.Model):
 class Companies(models.Model):
     name = models.CharField(max_length=50, unique=True, validators=[MaxLengthValidator(50)])
     cnpj = models.PositiveIntegerField(unique=True, validators=[MaxValueValidator(99999999999999)])
-    phone = models.IntegerField(unique=True, validators=[MinValueValidator(5500900000000), MaxValueValidator(5599999999999)]) # Somente números do Brasil
+    phone = models.IntegerField(unique=True, validators=[MinValueValidator(5500900000000), MaxValueValidator(5599999999999)]) # Only Brazilian numbers are valid
     address = models.OneToOneField(Addresses, on_delete = models.CASCADE)
     bike_parking_spots = models.PositiveSmallIntegerField(default=0) # 0 a 32767
     car_parking_spots = models.PositiveSmallIntegerField(default=0)
@@ -34,26 +36,33 @@ class Companies(models.Model):
     
     def post_a_company(company, address):
         try:
-            # TODO :recycle: Limpar espaços com services.standardize_in ou setup.standardize_in
-            new_address = Addresses(id=None, **address)
-            new_address.clean_fields()
-            new_address.save()
+            new_address = Addresses(**address)
+            
+            try:
+                new_address.clean_fields()
+                new_address.save()
+            except ValidationError as e:
+                return HttpResponse(json.dumps(e.message_dict), status=422)
         
             new_company = Companies(**company, address=new_address)
-            new_company.clean_fields()
-            new_company.save()
-        
-            return standardize_a_company(new_company, Companies, Addresses)
             
-        except ValidationError as e:
-            return json.dumps(e.message_dict)
+            try:
+                new_company.clean_fields()
+                new_company.save()
+            except ValidationError as e:
+                return HttpResponse(json.dumps(e.message_dict), status=422)
+        
+            return HttpResponse(standardize_a_company(new_company, Companies, Addresses), status=201)
+            
+        except:
+            return HttpResponse(json.dumps({"company": ["The company name, cnpj and phone must be unique"]}), status=409)
     
     def put_a_company(edited_company, edited_address, query_cnpj):
         company = model_to_dict(Companies.find_a_company_in_db(query_cnpj))
         address = model_to_dict(Addresses.find_a_address_in_db(company['address']))       
         
-        company = Companies.check_and_update_object(company, edited_company)
-        address = Companies.check_and_update_object(address, edited_address)
+        company = check_and_update_object(company, edited_company)
+        address = check_and_update_object(address, edited_address)
                
         Companies.objects.filter(pk = company['id']).update(**company)
         Addresses.objects.filter(pk = address['id']).update(**address)
@@ -78,13 +87,5 @@ class Companies(models.Model):
         except:
             company = []
         return company
-    
-    # TODO :recycle: enviar para setup.services 
-    @staticmethod
-    def check_and_update_object(object, edited_object ):
-        for key in object:
-            if (key in edited_object):
-                object[key] = edited_object[key]           
-        return object
 
     
