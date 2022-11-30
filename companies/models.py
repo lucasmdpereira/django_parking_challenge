@@ -2,6 +2,8 @@ from django.forms.models import model_to_dict
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator, MinLengthValidator, MaxLengthValidator
 from django.core.exceptions import ValidationError
+from companies.services import standardize_a_company
+
 
 import companies # TODO :recycle: Verificar necessidade em "standardize_a_company"
 import json
@@ -41,7 +43,7 @@ class Companies(models.Model):
             new_company.clean_fields()
             new_company.save()
         
-            return Companies.standardize_a_company(new_company)
+            return standardize_a_company(new_company, Companies, Addresses)
             
         except ValidationError as e:
             return json.dumps(e.message_dict)
@@ -56,12 +58,12 @@ class Companies(models.Model):
         Companies.objects.filter(pk = company['id']).update(**company)
         Addresses.objects.filter(pk = address['id']).update(**address)
 
-        return Companies.standardize_a_company(company)
+        return standardize_a_company(company, Companies, Addresses)
         
     # TODO :sparkles: criar retorno caso não encontre nenhuma empresa
     def get_a_company(query_cnpj):       
         company = Companies.find_a_company_in_db(query_cnpj)
-        return Companies.standardize_a_company(company)
+        return standardize_a_company(company, Companies, Addresses)
         
     def delete_a_company(query_cnpj):
         company = Companies.find_a_company_in_db(query_cnpj)
@@ -76,22 +78,6 @@ class Companies(models.Model):
         except:
             company = []
         return company
-    
-    # TODO :recycle: enviar para setup.services
-    @staticmethod
-    def standardize_a_company(company):
-        if (type(company) is dict):
-            standardized_company = company
-        elif(type(company) is companies.models.Companies): # Testar somente "is  Companies"
-            standardized_company = model_to_dict(company)
-        else:
-            return {}           
-    
-        address = Addresses.find_a_address_in_db(standardized_company['address']) 
-        standardized_company['address'] = model_to_dict(address)  
-        # standardized_company.pop('id', None) # remove the id from the company object
-        # standardized_company['address'].pop('id', None) # remove the id from the address object
-        return json.dumps(standardized_company)
     
     # TODO :recycle: enviar para setup.services 
     @staticmethod
