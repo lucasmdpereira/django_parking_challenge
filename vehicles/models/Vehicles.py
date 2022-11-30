@@ -8,8 +8,12 @@ from . import Vehicles_Models
 
 class Vehicles(models.Model):
     license_plate = models.CharField(max_length=7, unique=True, validators=[validate_slug])
-    model = models.ForeignKey(Vehicles_Models, on_delete = models.CASCADE)
-    type = models.CharField(max_length=20, unique=True, validators=[MinLengthValidator(3), MaxLengthValidator(20)])
+    model = models.ForeignKey(Vehicles_Models, unique=False, on_delete = models.CASCADE)
+    type_choices = [
+        ('car', 'car'),
+        ('bike', 'bike')
+    ]
+    type = models.CharField(max_length=20, choices=type_choices, default='car', unique=False, validators=[MinLengthValidator(3), MaxLengthValidator(20)])
     class Meta:
         db_table = 'vehicles';
     
@@ -18,10 +22,11 @@ class Vehicles(models.Model):
             vehicle['model'] = Vehicles_Models.objects.get(model = vehicle['model'])
         
             new_vehicle = Vehicles(**vehicle)
+            new_vehicle.clean_fields()
             new_vehicle.save()
             return standardize_out(new_vehicle)
         except:
-            return standardize_out({"error": ["Check model,and license plate"]})
+            return standardize_out({"error": ["Check model, type and license plate"]})
         
     def put_a_vehicle(new_vehicle, query_vehicle):
         try:
@@ -33,7 +38,7 @@ class Vehicles(models.Model):
             Vehicles.objects.filter(pk = vehicle['id']).update(**new_vehicle)
             return standardize_out(vehicle)
         except:
-            return standardize_out({"error": ["Check model,and license plate"]})
+            return standardize_out({"error": ["Check model, type and license plate"]})
     
     def get_a_vehicle(query_vehicle):
         try:

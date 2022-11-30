@@ -44,16 +44,21 @@ class Parking_Control(models.Model):
         }
         return parking_control_entry
     
-    def check_spots(company, vehicle):
-        vehicle_type = vehicle.model.type.type
-        if vehicle_type == "car":
-            pass
-        if vehicle_type == "bike":
-            teste = len(Parking_Control.objects.filter(company = company).filter(exit_datetime = None).filter(vehicle.model.type.type == 'bike'))
-        
-        
-            return teste
-        # teste = len(Parking_Control.objects.filter(company = company).filter(exit_datetime = None))
+    def check_left_spots(company, vehicle):
+        vehicle_type = vehicle.type
+        vehicles_in_parking = list(Parking_Control.objects.filter(company = company).filter(exit_datetime = None))
+         
+        vehicles_of_the_type_parking = 0
+        for vehicle in vehicles_in_parking:
+            if (vehicle.vehicle.type == vehicle_type):
+                vehicles_of_the_type_parking += 1
+                
+        if vehicle_type == 'car':
+            left_spots = company.car_parking_spots - vehicles_of_the_type_parking
+        if vehicle_type == 'bike':
+            left_spots = company.bike_parking_spots - vehicles_of_the_type_parking
+        return left_spots
+
 
         
 
