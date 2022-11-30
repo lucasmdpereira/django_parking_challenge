@@ -13,7 +13,7 @@ def post(request):
 def put(request, cnpj):
     company = json.loads(request.body)
     address = company.pop("address", None)
-    return HttpResponse(Companies.put_a_company(company, address, cnpj))
+    return Companies.put_a_company(company, address, cnpj)
 
 def get(request, cnpj):
     return HttpResponse(Companies.get_a_company(cnpj))

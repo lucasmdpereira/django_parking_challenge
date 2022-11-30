@@ -3,11 +3,15 @@ from django.forms.models import model_to_dict
 import json
 
 @staticmethod
-def check_and_update_object(object, edited_object ):
-    for key in object:
-        if (key in edited_object):
+def check_and_update_object(object, edited_object, model_object):
+    object = model_to_dict(object)
+    
+    for key in edited_object:
+        if (key in object):
             object[key] = edited_object[key]           
+    
     return object
+
 
 
 # @staticmethod
