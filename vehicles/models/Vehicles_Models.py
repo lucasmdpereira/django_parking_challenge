@@ -1,6 +1,6 @@
 from django.core.validators import MinLengthValidator, MaxLengthValidator
 from django.db import models
-from . import Vehicles_Brands, Vehicles_Types
+from . import Vehicles_Brands
 
 from django.forms.models import model_to_dict
 from vehicles.services import standardize_out, check_and_update_object
