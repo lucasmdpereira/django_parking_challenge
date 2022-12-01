@@ -164,5 +164,6 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
-# ASDF
-.too-versions
+# vscode
+.vscode/
+

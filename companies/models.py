@@ -1,14 +1,12 @@
 from django.db import models
-from django.forms.models import model_to_dict
 from django.http import HttpResponse
+import json
 
 from django.core.validators import MinValueValidator, MaxValueValidator, MinLengthValidator, MaxLengthValidator
 from django.core.exceptions import ValidationError
 
 from companies.services import standardize_a_company
 from setup.services import check_and_update_object
-
-import json
 
 class Addresses(models.Model):
     cep = models.PositiveIntegerField(
