@@ -1,6 +1,7 @@
 from django.core.validators import validate_slug, MinLengthValidator, MaxLengthValidator
 from django.db import models
 from django.forms.models import model_to_dict
+from django.http import HttpResponse
 
 from vehicles.services import standardize_in, standardize_out, check_and_update_object
 from . import Vehicles_Models
@@ -24,9 +25,9 @@ class Vehicles(models.Model):
             new_vehicle = Vehicles(**vehicle)
             new_vehicle.clean_fields()
             new_vehicle.save()
-            return standardize_out(new_vehicle)
+            return HttpResponse(standardize_out(new_vehicle), status=201)
         except:
-            return standardize_out({"error": ["Check model, type and license plate"]})
+            return HttpResponse(standardize_out({"error": ["Check model, type and license plate"]}), status=200)
         
     def put_a_vehicle(new_vehicle, query_vehicle):
         try:
@@ -36,25 +37,25 @@ class Vehicles(models.Model):
             new_vehicle['model'] = Vehicles_Models.objects.get(model = new_vehicle['model'])
             
             Vehicles.objects.filter(pk = vehicle['id']).update(**new_vehicle)
-            return standardize_out(vehicle)
+            return HttpResponse(standardize_out(vehicle), status=200)
         except:
-            return standardize_out({"error": ["Check model, type and license plate"]})
+            return HttpResponse(standardize_out({"vehicle": ["Check model, type and license plate"]}), status=200)
     
     def get_a_vehicle(query_vehicle):
         try:
             vehicle = model_to_dict(Vehicles.objects.get(license_plate = query_vehicle))
             
             vehicle['model'] = model_to_dict(Vehicles_Models.objects.get(pk = vehicle['model']))    
-            return standardize_out(vehicle)
+            return HttpResponse(standardize_out(vehicle), status=200)
         except:
-            return standardize_out({"error": ["Check the vehicle license plate"]})
+            return HttpResponse(standardize_out({"vehicle": ["Check the vehicle license plate"]}), status=200)
     
     def delete_a_vehicle(query_vehicle):
         try:
             vehicle = Vehicles.objects.get(license_plate = query_vehicle)
             vehicle.delete()
-            return standardize_out({"msg": [f'{query_vehicle} deleted successfully']})
+            return HttpResponse(standardize_out({"vehicle": [f'{query_vehicle} deleted successfully']}), status=200)
         except:
-            return standardize_out({"error": ["Check the vehicle license plate"]})
+            return HttpResponse(standardize_out({"vehicle": ["Check the vehicle license plate"]}), status=200)
         
                              

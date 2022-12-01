@@ -8,15 +8,15 @@ def index(request):
 def post(request):
     company = json.loads(request.body)
     address = company.pop("address", None)
-    return HttpResponse(Companies.post_a_company(company, address))
+    return Companies.post_a_company(company, address)
 
 def put(request, cnpj):
     company = json.loads(request.body)
     address = company.pop("address", None)
-    return HttpResponse(Companies.put_a_company(company, address, cnpj))
+    return Companies.put_a_company(company, address, cnpj)
 
 def get(request, cnpj):
-    return HttpResponse(Companies.get_a_company(cnpj))
+    return Companies.get_a_company(cnpj)
 
 def delete(request, cnpj):
-    return HttpResponse(Companies.delete_a_company(cnpj))
+    return Companies.delete_a_company(cnpj)

@@ -1,30 +1,70 @@
-from django.forms.models import model_to_dict
 from django.db import models
+from django.forms.models import model_to_dict
+from django.http import HttpResponse
+
 from django.core.validators import MinValueValidator, MaxValueValidator, MinLengthValidator, MaxLengthValidator
 from django.core.exceptions import ValidationError
 
-import companies # TODO :recycle: Verificar necessidade em "standardize_a_company"
+from companies.services import standardize_a_company
+from setup.services import check_and_update_object
+
 import json
 
 class Addresses(models.Model):
-    cep = models.PositiveIntegerField(validators=[MinValueValidator(1000000), MaxValueValidator(99999999)]) # https://suporte.boxloja.pro/article/90-faixa-de-ceps-do-brasil
-    street = models.CharField(max_length=255, validators=[MinLengthValidator(3), MaxLengthValidator(255)])
-    number = models.PositiveSmallIntegerField(validators=[MinValueValidator(1), MaxValueValidator(32767)])
-    others = models.CharField(max_length=255, blank=True, null=True, validators=[MaxLengthValidator(255)])
+    cep = models.PositiveIntegerField(
+        validators=[
+            MinValueValidator(1000000), 
+            MaxValueValidator(99999999)
+        ]
+    ) # https://suporte.boxloja.pro/article/90-faixa-de-ceps-do-brasil
+    street = models.CharField(
+        max_length=255,    
+        validators=[
+            MinLengthValidator(3), 
+            MaxLengthValidator(255)
+        ]
+    )
+    number = models.PositiveSmallIntegerField(
+        validators=[
+            MinValueValidator(1), 
+            MaxValueValidator(32767)
+        ]
+    )
+    others = models.CharField(
+        max_length=255, 
+        blank=True, 
+        null=True, 
+        validators=[MaxLengthValidator(255)]
+    )
     class Meta:
         db_table = 'addresses';
         
     @staticmethod
     def find_a_address_in_db(query_id):
         return Addresses.objects.filter(id = query_id).get()
-    
-    # TODO :recycle: Criar método save_a_address_in_db, está estranho a classe Companies fazer isso
+
 
 class Companies(models.Model):
-    name = models.CharField(max_length=50, unique=True, validators=[MaxLengthValidator(50)])
-    cnpj = models.PositiveIntegerField(unique=True, validators=[MaxValueValidator(99999999999999)])
-    phone = models.IntegerField(unique=True, validators=[MinValueValidator(5500900000000), MaxValueValidator(5599999999999)]) # Somente números do Brasil
-    address = models.OneToOneField(Addresses, on_delete = models.CASCADE)
+    name = models.CharField(
+        max_length=50, 
+        unique=True, 
+        validators=[MaxLengthValidator(50)]
+    )
+    cnpj = models.PositiveIntegerField(
+        unique=True, 
+        validators=[MaxValueValidator(99999999999999)]
+    )
+    phone = models.IntegerField(
+        unique=True, 
+        validators=[
+            MinValueValidator(5500900000000), 
+            MaxValueValidator(5599999999999)
+        ]
+    ) # Only Brazilian numbers are valid
+    address = models.OneToOneField(
+        Addresses, 
+        on_delete = models.CASCADE
+    )
     bike_parking_spots = models.PositiveSmallIntegerField(default=0) # 0 a 32767
     car_parking_spots = models.PositiveSmallIntegerField(default=0)
     class Meta:
@@ -32,42 +72,68 @@ class Companies(models.Model):
     
     def post_a_company(company, address):
         try:
-            # TODO :recycle: Limpar espaços com services.standardize_in ou setup.standardize_in
-            new_address = Addresses(id=None, **address)
-            new_address.clean_fields()
-            new_address.save()
+            new_address = Addresses(**address)
+            
+            try:
+                new_address.clean_fields()
+                new_address.save()
+            except ValidationError as e:
+                return HttpResponse(json.dumps(e.message_dict), status=422)
         
             new_company = Companies(**company, address=new_address)
-            new_company.clean_fields()
-            new_company.save()
-        
-            return Companies.standardize_a_company(new_company)
             
-        except ValidationError as e:
-            return json.dumps(e.message_dict)
+            try:
+                new_company.clean_fields()
+                new_company.save()
+            except ValidationError as e:
+                return HttpResponse(json.dumps(e.message_dict), status=422)
+            
+            return HttpResponse(standardize_a_company(new_company, Companies, Addresses), status=201)
+            
+        except:
+            return HttpResponse(json.dumps({"company": ["The company name, cnpj and phone must be unique"]}), status=409)
     
     def put_a_company(edited_company, edited_address, query_cnpj):
-        company = model_to_dict(Companies.find_a_company_in_db(query_cnpj))
-        address = model_to_dict(Addresses.find_a_address_in_db(company['address']))       
+        company = (Companies.find_a_company_in_db(query_cnpj))
+        if (company == []):
+            return HttpResponse(json.dumps([]), status=200)
         
-        company = Companies.check_and_update_object(company, edited_company)
-        address = Companies.check_and_update_object(address, edited_address)
-               
-        Companies.objects.filter(pk = company['id']).update(**company)
-        Addresses.objects.filter(pk = address['id']).update(**address)
+        address = (Addresses.find_a_address_in_db(company.address_id))       
+        
+        company = check_and_update_object(company, edited_company, Companies)
+        address = check_and_update_object(address, edited_address, Addresses)
+        
+        try:
+            Addresses(**address).clean_fields()            
+        except ValidationError as e:
+            return HttpResponse(json.dumps(e.message_dict), status=422)
+        
+        put_address = Addresses.objects.filter(pk = address['id'])
+        put_address.update(**address)
+        
+        try:
+            company['address'] = Addresses.objects.get(pk = address['id'])
+            Companies(**company).clean_fields()            
+        except ValidationError as e:
+            return HttpResponse(json.dumps(e.message_dict), status=422)
 
-        return Companies.standardize_a_company(company)
+        Companies.objects.filter(pk = company['id']).update(**company)
         
-    # TODO :sparkles: criar retorno caso não encontre nenhuma empresa
+        return HttpResponse(standardize_a_company(Companies.objects.get(pk = company['id']), Companies, Addresses), status=200)
+        
     def get_a_company(query_cnpj):       
         company = Companies.find_a_company_in_db(query_cnpj)
-        return Companies.standardize_a_company(company)
+        if (company == []):
+            return HttpResponse(json.dumps([]), status=200)
+        return standardize_a_company(company, Companies, Addresses)
         
     def delete_a_company(query_cnpj):
         company = Companies.find_a_company_in_db(query_cnpj)
-        company.delete()
-        
-        return json.dumps('Company deleted successfully')
+        if (company == []):
+            return HttpResponse(json.dumps({'company': ['Company not found to delete, please check the cnpj']}), status=200)        
+        else:
+            company.delete()
+            return HttpResponse(json.dumps({'company': [f'CNPJ {query_cnpj} deleted successfully']}), status=200)
     
     @staticmethod
     def find_a_company_in_db(query_cnpj):
@@ -76,29 +142,5 @@ class Companies(models.Model):
         except:
             company = []
         return company
-    
-    # TODO :recycle: enviar para setup.services
-    @staticmethod
-    def standardize_a_company(company):
-        if (type(company) is dict):
-            standardized_company = company
-        elif(type(company) is companies.models.Companies): # Testar somente "is  Companies"
-            standardized_company = model_to_dict(company)
-        else:
-            return {}           
-    
-        address = Addresses.find_a_address_in_db(standardized_company['address']) 
-        standardized_company['address'] = model_to_dict(address)  
-        # standardized_company.pop('id', None) # remove the id from the company object
-        # standardized_company['address'].pop('id', None) # remove the id from the address object
-        return json.dumps(standardized_company)
-    
-    # TODO :recycle: enviar para setup.services 
-    @staticmethod
-    def check_and_update_object(object, edited_object ):
-        for key in object:
-            if (key in edited_object):
-                object[key] = edited_object[key]           
-        return object
 
     

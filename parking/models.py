@@ -4,8 +4,10 @@ from companies.models import Companies
 from vehicles.models import Vehicles
 from vehicles.services import standardize_out
 from django.forms.models import model_to_dict
+from django.http import HttpResponse
 
 from django.utils.timezone import now
+from datetime import timedelta
 
 
 class Parking_Control(models.Model):
@@ -17,25 +19,43 @@ class Parking_Control(models.Model):
         db_table = 'parking_control';
     
     def vehicle_in(company_cnpj, vehicle_license_plate):
-        company = Companies.objects.get(cnpj = company_cnpj)
-        vehicle = Vehicles.objects.get(license_plate = vehicle_license_plate)
-        
-        parking_control_entry = Parking_Control.mount_object_to_save(company, vehicle)
+        try:
+            company = Companies.objects.get(cnpj = company_cnpj)
+            vehicle = Vehicles.objects.get(license_plate = vehicle_license_plate)
+            
+            parking_control_entry = Parking_Control.mount_object_to_save(company, vehicle)
 
-        
-        parking_control_entry = Parking_Control(**parking_control_entry)
-        parking_control_entry.save()
-        
-        Parking_Control.check_spots(company, vehicle)
-        
-        return standardize_out(parking_control_entry)
-    
+            
+            parking_control_entry = Parking_Control(**parking_control_entry)
+            
+            left_spots = Parking_Control.check_left_spots(company, vehicle)
+            if left_spots > 1:
+                parking_control_entry.save()
+                return HttpResponse(standardize_out({"parking_in":[f"Vehicle {vehicle_license_plate} enter at {str(now())}", f"There's {left_spots} more spots for {vehicle.type}"]}), status=201)
+            elif left_spots == 1:
+                parking_control_entry.save()
+                return HttpResponse(standardize_out({"parking_in":[f"Vehicle {vehicle_license_plate} enter at {str(now())}", f"WARNING, there's one more spot for {vehicle.type}"]}), status=201)
+            elif left_spots <= 0:
+                return HttpResponse(standardize_out({"parking_in":[f"Sorry, we are full"]}), status=200)
+            
+
+        except:
+            return HttpResponse(standardize_out({"parking_in": ["Check de vehicle license plate and company"]}), status=422)
+
     def vehicle_out(company_cnpj, vehicle_license_plate):
-        vehicle = Vehicles.objects.get(license_plate = vehicle_license_plate)
-        
-        Parking_Control.objects.filter(vehicle = vehicle).filter(exit_datetime = None).update(exit_datetime = str(now()))
-        
-        return standardize_out({"msg": f'{model_to_dict(vehicle)["license_plate"]} is out'})       
+        try:
+            vehicle = Vehicles.objects.get(license_plate = vehicle_license_plate)
+            
+            parking_out = Parking_Control.objects.filter(vehicle = vehicle).filter(exit_datetime = None).get()
+            
+            total_time = now() - parking_out.entry_datetime 
+            standardize_time = timedelta(seconds=total_time.seconds)
+            
+            Parking_Control.objects.filter(vehicle = vehicle).filter(exit_datetime = None).update(exit_datetime = str(now()))
+            
+            return HttpResponse(standardize_out({"parking_out": [f'{model_to_dict(vehicle)["license_plate"]} is out', f'Total time = {standardize_time}']}), status=200)
+        except:
+            return HttpResponse(standardize_out({"parking_out": ["Check de vehicle license plate and company"]}), status=422)    
     
     def mount_object_to_save(company, vehicle):
         parking_control_entry = {
@@ -55,8 +75,9 @@ class Parking_Control(models.Model):
                 
         if vehicle_type == 'car':
             left_spots = company.car_parking_spots - vehicles_of_the_type_parking
-        if vehicle_type == 'bike':
+        elif vehicle_type == 'bike':
             left_spots = company.bike_parking_spots - vehicles_of_the_type_parking
+            
         return left_spots
 
 
