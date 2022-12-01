@@ -2,6 +2,7 @@ from django.core.validators import MinLengthValidator, MaxLengthValidator
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.forms.models import model_to_dict
+from django.http import HttpResponse
 
 from vehicles.services import standardize_in, standardize_out, check_and_update_object
 
@@ -19,40 +20,42 @@ class Vehicles_Brands(models.Model):
             new_vehicle_brand.clean_fields()
             try:
                 new_vehicle_brand.save()
-                return standardize_out(new_vehicle_brand)
+                return HttpResponse(standardize_out(new_vehicle_brand), status= 201)
             except:
-                return standardize_out({"brand": [f'{list(object.values())[0]} already exists']})
+                return HttpResponse(standardize_out({"brand": ['Brand name must be unique']}), status = 409)
         except ValidationError as e:
-            return standardize_out(e.message_dict)
+            return HttpResponse(standardize_out(e.message_dict), status=422)
         
     def put_a_brand(edited_vehicle_brand, query_vehicle_brand):
         try:
             vehicle_brand = Vehicles_Brands.objects.get(brand = query_vehicle_brand)
         except:
-            return standardize_out({"brand": [f'{query_vehicle_brand} not found']})
+            return HttpResponse(standardize_out({"brand": [f'{query_vehicle_brand} not found']}), status=200)
         
         vehicle_brand = check_and_update_object(model_to_dict(vehicle_brand), edited_vehicle_brand)
         try: 
             test_vehicle_brand = Vehicles_Brands(**vehicle_brand)
             test_vehicle_brand.clean_fields()
         except ValidationError as e:
-            return json.dumps(e.message_dict)
+            return HttpResponse(json.dumps(e.message_dict), status=422)
         
         Vehicles_Brands.objects.filter(pk = vehicle_brand['id']).update(**edited_vehicle_brand)
-        return standardize_out(vehicle_brand)    
+        
+        return HttpResponse(standardize_out(vehicle_brand), status=200)
 
     def get_a_brand(query_vehicle_brand):
         try:
             vehicle_brand = Vehicles_Brands.objects.get(brand = query_vehicle_brand)
-            return standardize_out(vehicle_brand)
+            return HttpResponse(standardize_out(vehicle_brand), status=200)
         except:
-            return standardize_out({"brand":[f'{query_vehicle_brand} not found']})
+            return HttpResponse(standardize_out({"brand":[f'{query_vehicle_brand} not found']}), status=200)
     
     def delete_a_brand(query_vehicle_brand):
         try:
             vehicle_brand = Vehicles_Brands.objects.get(brand = query_vehicle_brand)
-        except:
-            return json.dumps({'brand': ['brand not found to delete, please check the brand name']}) 
-        else:
             vehicle_brand.delete()
-        return standardize_out({"brand":[f'{query_vehicle_brand} deleted successfully']})
+            return HttpResponse(standardize_out({"brand":[f'{query_vehicle_brand} deleted successfully']}), status=200)
+        except:
+            return HttpResponse(json.dumps({'brand': ['brand not found to delete, please check the brand name']}), status=422)
+
+            

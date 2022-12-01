@@ -2,6 +2,7 @@ from django.core.validators import MinLengthValidator, MaxLengthValidator
 from django.db import models
 from . import Vehicles_Brands
 from django.core.exceptions import ValidationError
+from django.http import HttpResponse
 
 from django.forms.models import model_to_dict
 from vehicles.services import standardize_out, check_and_update_object
@@ -20,11 +21,11 @@ class Vehicles_Models(models.Model):
                 new_vehicle_model.clean_fields()
                 new_vehicle_model.save()
             except ValidationError as e:
-                return standardize_out(e.message_dict)
+                return HttpResponse(standardize_out(e.message_dict), status=422)
                 
-            return standardize_out(new_vehicle_model)
+            return HttpResponse(standardize_out(new_vehicle_model), status=200)
         except:
-            return standardize_out({"error": ["Check model and brand names"]})
+            return HttpResponse(standardize_out({"models": ["Check model and brand names"]}), status=200)
         
     def put_a_vehicle_model(new_vehicle_model, query_vehicle_model):
         try:
@@ -34,23 +35,23 @@ class Vehicles_Models(models.Model):
             new_vehicle_model['brand'] = Vehicles_Brands.objects.get(brand = vehicle_model['brand'])           
             Vehicles_Models.objects.filter(pk = vehicle_model['id']).update(**new_vehicle_model)
             
-            return standardize_out(vehicle_model)
+            return HttpResponse(standardize_out(vehicle_model), status = 200)
         except:
-            return standardize_out({"error": ["Check model and brand names"]})
+            return HttpResponse(standardize_out({"model": ["Check model and brand names"]}), status=200)
 
     def get_a_vehicle_model(query_vehicle_model):
         try:
             vehicle_model = model_to_dict(Vehicles_Models.objects.get(model = query_vehicle_model))
             vehicle_model['brand'] = model_to_dict(Vehicles_Brands.objects.get(pk = vehicle_model['brand']))['brand']
-            return standardize_out(vehicle_model)
+            return HttpResponse(standardize_out(vehicle_model), status=200)
         except:
-            return standardize_out({"error": ["Check the model query"]})
+            return HttpResponse(standardize_out({"model": ["Check the model query"]}), status=200)
         
     def delete_a_vehicle_model(query_vehicle_model):
         try:
             vehicle_model = Vehicles_Models.objects.get(model = query_vehicle_model)
             vehicle_model.delete()
-            return standardize_out({"msg":[f'{query_vehicle_model} deleted successfully']})
+            return HttpResponse(standardize_out({"model":[f'{query_vehicle_model} deleted successfully']}), status=200)
         except:
-            return standardize_out({"error": ["Check the model query"]})
+            return HttpResponse(standardize_out({"model": ["Check the model query"]}), status=200)
         
