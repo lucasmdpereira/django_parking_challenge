@@ -125,7 +125,7 @@ class Companies(models.Model):
         company = Companies.find_a_company_in_db(query_cnpj)
         if (company == []):
             return HttpResponse(json.dumps([]), status=200)
-        return standardize_a_company(company, Companies, Addresses)
+        return HttpResponse(standardize_a_company(company, Companies, Addresses), status=200)
         
     def delete_a_company(query_cnpj):
         company = Companies.find_a_company_in_db(query_cnpj)
