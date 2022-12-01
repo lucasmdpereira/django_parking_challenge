@@ -1,3 +1,22 @@
-from django.shortcuts import render
+from django.http import HttpResponse
+from .models import Companies
+import json
 
-# Create your views here.
+def index(request):
+    return HttpResponse("Hello, world. You're at the companies index.")
+
+def post(request):
+    company = json.loads(request.body)
+    address = company.pop("address", None)
+    return Companies.post_a_company(company, address)
+
+def put(request, cnpj):
+    company = json.loads(request.body)
+    address = company.pop("address", None)
+    return Companies.put_a_company(company, address, cnpj)
+
+def get(request, cnpj):
+    return Companies.get_a_company(cnpj)
+
+def delete(request, cnpj):
+    return Companies.delete_a_company(cnpj)
